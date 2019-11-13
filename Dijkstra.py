@@ -1,4 +1,19 @@
 import sys
+from math import isinf
+
+class Node:
+    
+    def __init__(self, name):
+        self.name = name
+        self.links = {}
+        self.distanceValue = None
+        self.previousNode = None
+
+    def isNeighbor(self, node):
+        if self.links[node.name] is not 9999:
+            return True
+        else:
+            return False
 
 class Network:
 
@@ -9,17 +24,71 @@ class Network:
         node = Node(name)
         self.nodes.append(node)
 
-    def computeShortestPath(self, node):
+    def computeShortestPath(self, sourceNode):
         # Dijkstra's Algorithm
         # Examine links of the source node
-        pass
-    
-class Node:
+        
+        sourceNode.distanceValue = 0
+        pathNodes = [sourceNode]
 
-    def __init__(self, name):
-        self.name = name
-        self.links = {}
+        for node in self.nodes:
+            # if node isn't source and is adjacent to source
+            if node.name is not sourceNode.name and node.name in sourceNode.links:
+                node.distanceValue = sourceNode.links[node.name]
+                node.previousNode = sourceNode
+            elif node.name is not sourceNode.name:
+                node.distanceValue = float("inf")
 
+        while len(pathNodes) is not len(self.nodes):
+            # find the smallest distance value of the nodes not in the path
+            minCost = float("inf")
+            neighbors = {}
+            for node in self.nodes:
+                if node not in pathNodes:
+                    neighbors[node.distanceValue] = node
+
+            minCost = min(neighbors)
+            nextNode = neighbors[minCost]
+            
+
+
+            pathNodes.append(nextNode)
+
+            for node in self.nodes:
+                if node not in pathNodes:
+                    oldValue = node.distanceValue
+                    newValue = minCost + nextNode.links[node.name]
+                    node.distanceValue = min(oldValue, newValue)
+                    if node.distanceValue is newValue:
+                        node.previousNode = nextNode
+
+            # Generate shortest paths
+            shortestPaths = []
+            pathCost = ""
+            for node in self.nodes:
+                if node is not sourceNode:
+                    path = [node.name]
+                    previousNode = node.previousNode
+                    while True:
+                        path.append(previousNode.name)
+                        if previousNode is sourceNode:
+                            break
+                        else:
+                            previousNode = previousNode.previousNode
+                    path.reverse()
+                    path = ''.join(path)
+                    shortestPaths.append(path)
+                
+                pathCost += "{}:{}, ".format(node.name, node.distanceValue)
+
+        print
+        print "Shortest path tree for node {}:".format(sourceNode.name)
+        print ", ".join(shortestPaths)
+        print "Costs of least-cost paths for node {}".format(sourceNode.name)
+        print pathCost
+        print
+            
+# Main
 network = Network()
 
 fileLines = []
@@ -34,7 +103,6 @@ nodes = fileLines.pop(0)
 nodes = nodes.rstrip()
 nodes = nodes.split(",")
 nodes.pop(0)
-print nodes
 
 # Add nodes to network
 for node in nodes:
@@ -51,10 +119,7 @@ for line in fileLines:
             break
     # Add links
     for node, link in zip(nodes, line):
-        if link is "9999":
-            link = float("inf")
-        else:
-            link = int(link)
+        link = int(link)
         sourceNode.links[node] = link
 
 validInput = False
